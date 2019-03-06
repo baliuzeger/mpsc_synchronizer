@@ -1,0 +1,4 @@
+[[package]]
+name = "mpsc_synchronizer"
+version = "0.1.0"
+
