@@ -11,7 +11,7 @@ fn main() {
         loop {
             println!("a");
             tx_report_0.send(0).unwrap();
-            thread::sleep(Duration::from_secs(1));
+            thread::sleep(Duration::from_millis(100));
             if rx_confirm_0.recv().unwrap() == 1 {
                 break;
             }
@@ -30,7 +30,7 @@ fn main() {
             rx_report_0.recv().unwrap();
             rx_report_1.recv().unwrap();
             println!("{}", counter);
-            thread::sleep(Duration::from_secs(2));
+            thread::sleep(Duration::from_millis(200));
             counter += 1;
             if counter > 4 {
                 tx_confirm_0.send(1).unwrap();
