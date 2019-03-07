@@ -1,45 +1,44 @@
 use std::thread;
-use std::sync::mpsc;
 use std::time::Duration;
+extern crate crossbeam_channel;
 
 fn main() {
-    let (tx_report_0, rx_report_0) = mpsc::channel();
-    let (tx_report_1, rx_report_1) = mpsc::channel();
-    let (tx_confirm_0, rx_confirm_0) = mpsc::channel();
-    let (tx_confirm_1, rx_confirm_1) = mpsc::channel();
+    let (tx0, rx0) = crossbeam_channel::bounded(0);
+    let (tx1, rx1) = crossbeam_channel::bounded(0);
     let agent_a = thread::spawn(move || {
+        let mut c_a = 0;
         loop {
-            println!("a");
-            tx_report_0.send(0).unwrap();
-            thread::sleep(Duration::from_millis(100));
-            if rx_confirm_0.recv().unwrap() == 1 {
+            println!("a{}", c_a);
+            c_a += 1;
+            thread::sleep(Duration::from_millis(30));
+            if rx0.recv().unwrap() == 1 {
                 break;
             }
         }});
     let agent_b = thread::spawn(move || {
+        let mut c_b = 0;
         loop {
-            println!("b");
-            tx_report_1.send(0).unwrap();
-            if rx_confirm_1.recv().unwrap() == 1 {
+            println!("b{}", c_b);
+            c_b += 1;
+            thread::sleep(Duration::from_millis(20));
+            if rx1.recv().unwrap() == 1 {
                 break;
             }
         }});
     let synchronizer = thread::spawn(move || {
         let mut counter = 0;
         loop {
-            rx_report_0.recv().unwrap();
-            rx_report_1.recv().unwrap();
-            println!("{}", counter);
-            thread::sleep(Duration::from_millis(200));
-            counter += 1;
+            thread::sleep(Duration::from_millis(100));
             if counter > 4 {
-                tx_confirm_0.send(1).unwrap();
-                tx_confirm_1.send(1).unwrap();
+                tx0.send(1).unwrap();
+                tx1.send(1).unwrap();
                 break;
             } else {
-                tx_confirm_0.send(0).unwrap();
-                tx_confirm_1.send(0).unwrap();
+                tx0.send(0).unwrap();
+                tx1.send(0).unwrap();
             }
+            println!("{}", counter);
+            counter += 1;
         }});
     agent_a.join().expect("The sender thread has panicked");
     agent_b.join().expect("The sender thread has panicked");
