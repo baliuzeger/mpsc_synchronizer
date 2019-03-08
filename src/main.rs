@@ -11,6 +11,7 @@
 use std::thread;
 use std::sync::mpsc;
 use std::time::Duration;
+use std::sync::{Mutex, Arc};
 
 fn main() {
     let (tx_report_0, rx_report_0) = mpsc::channel();
@@ -19,19 +20,21 @@ fn main() {
     let (tx_confirm_1, rx_confirm_1) = mpsc::channel();
     let (tx_thread, rx_main) = mpsc::channel();
     
-    let mut t0: Vec<i32> = Vec::new();
-    t0.push(1);
+    // let t0 = Arc::new(Mutex::new(1));
+    let t0 = Mutex::new(1);
     println!("t0 initial: {:?}.", t0);
+    // let t1 = Arc::clone(&t0);
     
     let agent_a = thread::spawn(move || {
         loop {
             println!("a");
             tx_report_0.send(0).unwrap();
             thread::sleep(Duration::from_millis(100));
-            t0.push(1);
             println!("t0 in agent_a: {:?}.", t0);
+            // println!("t1 in agent_a: {:?}.", t1);
             if rx_confirm_0.recv().unwrap() == 1 {
-                tx_thread.send(t0).unwrap();
+                // tx_thread.send(t1).unwrap();
+                tx_thread.send(1).unwrap();
                 break;
             }
         }});
@@ -63,8 +66,9 @@ fn main() {
             }
         }});
 
-    let t0 = rx_main.recv().unwrap();
-    println!("t0 before join: {:?}.", t0);
+    println!("t0 before recv: {:?}.", t0);
+    let t1 = rx_main.recv().unwrap();
+    println!("t0 after recv: {:?}.", t0);
     agent_a.join().expect("The sender thread has panicked");
     agent_b.join().expect("The sender thread has panicked");
     synchronizer.join().expect("The sender thread has panicked");
